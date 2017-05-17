@@ -3,9 +3,11 @@ title: "R Notebook"
 output: html_notebook
 ---
 
-```{r loading required libraries and importing data}
+```{r loading required libraries and importing data, echo=TRUE}
 library('kernlab')
 library('RCurl')
+library('ggplot2')
+library('GGally')
 
 file <- getURL('https://d37djvu3ytnwxt.cloudfront.net/assets/courseware/v1/e39a3df780dacd5503df6a8322d72cd2/asset-v1:GTx+ISYE6501x+2T2017+type@asset+block/credit_card_data-headers.txt', ssl.verifyhost=FALSE, ssl.verifypeer=FALSE)
 
@@ -16,7 +18,7 @@ head(data)
 ```
 
 
-```{r}
+```{r, echo=TRUE}
 
 x <- data[,11]
 y <- data[,1:10]
@@ -33,6 +35,18 @@ pred <- predict(model,data[,1:10])
 pred
 
 sum(pred == data[,11]) / nrow(data)
+
+coef(model)
+b(model)
+error(model)
+kernelf(model)
+
+```
+
+```{r, echo=TRUE}
+
+data[,11] <- as.factor(data[,11])
+GGally::ggpairs(data[, c(2:4,9:11)], aes(colour=R1))
 
 
 ```

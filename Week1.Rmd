@@ -1,0 +1,39 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r loading required libraries and importing data}
+library('kernlab')
+library('RCurl')
+
+file <- getURL('https://d37djvu3ytnwxt.cloudfront.net/assets/courseware/v1/e39a3df780dacd5503df6a8322d72cd2/asset-v1:GTx+ISYE6501x+2T2017+type@asset+block/credit_card_data-headers.txt', ssl.verifyhost=FALSE, ssl.verifypeer=FALSE)
+
+data <- read.csv(textConnection(file), header=T, sep = "\t")
+
+head(data)
+
+```
+
+
+```{r}
+
+x <- data[,11]
+y <- data[,1:10]
+
+model <- ksvm(x, y, type = "C-svc", kernal = "vanilladot", C=100, scaled = TRUE)
+
+a <- colSums(data[model@SVindex,1:10]*model@coef[[1]])
+a
+
+a0 <- sum(a*data[1,1:10]) - model@b
+a0
+
+pred <- predict(model,data[,1:10])
+pred
+
+sum(pred == data[,11]) / nrow(data)
+
+
+```
+

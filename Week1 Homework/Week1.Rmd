@@ -1,6 +1,9 @@
 ---
 title: "R Notebook"
-output: html_notebook
+output:
+  html_document: default
+  html_notebook: default
+  word_document: default
 ---
 
 ```{r loading required libraries and importing data, echo=TRUE}
@@ -20,10 +23,10 @@ head(data)
 
 ```{r, echo=TRUE}
 
-x <- data[,11]
-y <- data[,1:10]
+x <- as.matrix(data[,1:10])
+y <- data[,11]
 
-model <- ksvm(x, y, type = "C-svc", kernal = "vanilladot", C=100, scaled = TRUE)
+model <- ksvm(x, y, type = "C-svc", kernal = "polydot", C=100, scaled = TRUE, cross = 3)
 
 a <- colSums(data[model@SVindex,1:10]*model@coef[[1]])
 a
@@ -43,11 +46,40 @@ kernelf(model)
 
 ```
 
+```{r}
+kernals <- c('rbfdot','polydot','vanilladot','tanhdot','laplacedot','besseldot','anovadot','splinedot','stringdot')
+
+for(kernal in kernals){
+model <- ksvm(x, y, type = "C-svc", kernal = kernal, C=100, scaled = TRUE, cross = 5)
+pred <- predict(model,data[,1:10])
+cat('\n',kernal,'pred: ', sum(pred == data[,11]) / nrow(data))
+}
+```
+
+
+
 ```{r, echo=TRUE}
 
 data[,11] <- as.factor(data[,11])
 GGally::ggpairs(data[, c(2:4,9:11)], aes(colour=R1))
 
 
+```
+
+
+```{r}
+results<-c() 
+n=1 
+results < NULL
+for(i in seq(from=1, to=100, by=10))
+{ 
+  model <- ksvm(x, y, scaled =TRUE, C=i, type ="C-svc", kernel="vanilladot",cross=5) 
+  
+pred <- predict(model, data[,1:10]) 
+results[n] <- sum(pred == data[,11])/nrow(data) 
+n=n+1 
+}
+
+results
 ```
 

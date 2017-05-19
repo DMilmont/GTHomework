@@ -1,8 +1,8 @@
 ---
 title: "R Notebook"
 output:
-  html_document: default
   html_notebook: default
+  html_document: default
   word_document: default
 ---
 
@@ -36,18 +36,17 @@ a0 <- sum(a*data[1,1:10]) - model@b
 a0
 
 pred <- predict(model,data[,1:10])
-pred
+# pred
 
-sum(pred == data[,11]) / nrow(data)
+cat('SVM accuracy:',sum(pred == data[,11]) / nrow(data),'\n')
 
-coef(model)
 b(model)
 error(model)
 kernelf(model)
 
 ```
 
-```{r}
+```{r trying all kernals}
 kernals <- c('rbfdot','polydot','vanilladot','tanhdot','laplacedot','besseldot','anovadot','splinedot','stringdot')
 
 for(kernal in kernals){
@@ -59,7 +58,7 @@ cat('\n',kernal,'pred: ', sum(pred == data[,11]) / nrow(data))
 
 
 
-```{r, echo=TRUE}
+```{r, fig.height=10, fig.width=10, message=FALSE, warning=FALSE}
 
 data[,11] <- as.factor(data[,11])
 GGally::ggpairs(data[, c(2:4,9:11)], aes(colour=R1))
@@ -69,18 +68,18 @@ GGally::ggpairs(data[, c(2:4,9:11)], aes(colour=R1))
 
 
 ```{r}
-results<-c() 
-n=1 
-results < NULL
-for(i in seq(from=100, to=200, by=5))
-{ 
-  model <- ksvm(x, y, scaled =TRUE, C=i, type ="C-svc", kernel="vanilladot",cross=5) 
-  
-pred <- predict(model, data[,1:10]) 
-results[n] <- sum(pred == data[,11])/nrow(data) 
-n=n+1 
-}
-
-results
+# results<-c() 
+# n=1 
+# results < NULL
+# for(i in seq(from=100, to=200, by=0))
+# { 
+#   model <- ksvm(x, y, scaled =TRUE, C=i, type ="C-svc", kernel="vanilladot",cross=5) 
+#   
+# pred <- predict(model, data[,1:10]) 
+# results[n] <- sum(pred == data[,11])/nrow(data) 
+# n=n+1 
+# }
+# 
+# results
 ```
 

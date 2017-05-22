@@ -53,7 +53,7 @@ GGally::ggpairs(data[, c(2:4,9:11)], aes(colour=R1))
 
 ##Creating the Model - SVM
 
-Selected the polydot kernal as it has the highest accuracy. AFter runing MLR package for parameter hypertuning settled with C=256 for 96% accuracy 
+Selected the polydot kernal as it has the highest accuracy. After runing MLR package for parameter hypertuning settled with C=2.73e+06 for 100% accuracy  - This results in a very small margin hyperplane. I suspect in a real life scenerio this is not optimal as the use case would benefit from some margin of error for review scenerios. 
 ```{r, echo=TRUE}
 
 #Creating matrix to train model 
@@ -61,7 +61,7 @@ x <- as.matrix(data[,1:10])
 #creating target 
 y <- data[,11]
 
-model <- ksvm(y ~ x, type = "C-svc", kernal = "polydot", C=256, scaled = TRUE, cross = 5)
+model <- ksvm(y ~ x, type = "C-svc", kernal = "polydot", C=2.73e+06, scaled = TRUE, cross = 5)
 
 a <- colSums(data[model@SVindex,1:10]*model@coef[[1]])
 cat('a:',a,'\n')
@@ -97,8 +97,8 @@ cat('\n',kernal,'pred: ', sum(pred == data[,11]) / nrow(data))
 
 ##Paramater Hypertuning
 
-Utilized the MLR package for paramter tuning, selected C=256 for highest prediction accuracy
-```{r}
+Utilized the MLR package for parameter tuning, selected C=2.73e+06 for highest prediction accuracy
+```{r, message=FALSE, warning=FALSE}
 #Trying mlr package for parameter hypertuning 
 
 trainTask <- makeClassifTask(data = data, target = 'R1')
@@ -110,79 +110,52 @@ getParamSet("classif.ksvm")
 
 set_cv <- makeResampleDesc("CV",iters = 3L)
 pssvm <- makeParamSet(
-makeDiscreteParam("C", values = 2^c(-8,-4,-2,8)), #cost parameters
-makeDiscreteParam("sigma", values = 2^c(-8,-4,0,4)) #RBF Kernel Parameter
+  makeNumericParam("C", lower = -10, upper = 10, trafo = function(x) 10^x),
+  makeNumericParam("sigma", lower = -10, upper = 10, trafo = function(x) 10^x)
 )
 
-ctrl <- makeTuneControlGrid()
 
-res <- tuneParams(ksvm, task = trainTask, resampling = set_cv, par.set = pssvm, control = ctrl,measures = acc)
+ctrl = makeTuneControlRandom(maxit = 200L)
+
+res <- tuneParams(ksvm, task = trainTask, resampling = set_cv, par.set = pssvm, control = ctrl)
 
 t.svm <- setHyperPars(ksvm, par.vals = res$x)
 
 par.svm <- train(ksvm, trainTask)
 predict.svm <- predict(par.svm, trainTask)
 
-
+res
 
 ```
 
 
-
-##Creating the Model - K Means Clustering 
+##Training KKNN - Using Test, Train, And Validate data sets - results are KKNN accuracy: 0.9160305 
 ```{r}
 
-train.knn <- kknn(formula = formula(train$R1~.), train = train, test = test, k = 7, distance = 1,kernel = "optimal", scale=TRUE)
-
-fit <- fitted(train.knn)
-table(test$R1, fit)
-
-predict(train.knn, validate$R1)
-
-table(predict(fit,train),train$R1)
-
-fitted.values
-
-table(predict(knn, validate), valididate$R1)
-(fit.train2 <- train.kknn(train$R1~., ionosphere.learn, kmax = 15, 
-	kernel = c("triangular", "rectangular", "epanechnikov", "optimal"), distance = 2))
-table(predict(fit.train2, ionosphere.valid), ionosphere.valid$class)
-```
-
-##Training KKNN - Using Test, Train, And Validate data setes 
-```{r}
-
-train.knn <- kknn(formula = formula(train$R1~.), train = train, test = test, k = 7, distance = 1, kernel = "optimal", scale=TRUE)
+train.knn <- kknn(formula = formula(train$R1~.), train = train, test = test, k = 2, distance = 1, kernel = "optimal", scale=TRUE)
 
 fit <- fitted(train.knn)
 
 table(test$R1, fit)
 
 
-(fit.train1 <- train.kknn(R1 ~ ., train, kmax = 3,
+(fit.train1 <- train.kknn(R1 ~ ., train, kmax = 99,
 	kernel = "optimal", distance = 1))
 
-(fit.train2 <- train.kknn(R1 ~ ., train, kmax = 4,
-	kernel = "optimal", distance = 1))
+fit.train1$best.parameters
 
-(fit.train3 <- train.kknn(R1 ~ ., train, kmax = 5,
-	kernel = "optimal", distance = 1))
+# table(predict(fit.train1, validate), validate$R1)
+# table(predict(fit.train2, validate), validate$R1)
+# table(predict(fit.train3, validate), validate$R1)
+# table(predict(fit.train4, validate), validate$R1)
 
-(fit.train4 <- train.kknn(R1 ~ ., train, kmax = 6,
-	kernel = "optimal", distance = 1))
-
-
-table(predict(fit.train1, validate), validate$R1)
-table(predict(fit.train2, validate), validate$R1)
-table(predict(fit.train3, validate), validate$R1)
-table(predict(fit.train4, validate), validate$R1)
-
-plot(fit.train1)
-plot(fit.train2)
-plot(fit.train3)
-plot(fit.train4)
+# plot(fit.train1)
+# plot(fit.train2)
+# plot(fit.train3)
+# plot(fit.train4)
 
 cat('KKNN accuracy:',sum(fit == test[,11]) / nrow(test),'\n')
+
 
 ```
 

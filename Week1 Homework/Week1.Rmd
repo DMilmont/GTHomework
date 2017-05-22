@@ -1,11 +1,11 @@
 ---
-title: "R Notebook"
-output:
-  pdf_document: default
-  html_notebook: default
-  html_document: default
-  word_document: default
+title: "SVM Week 1"
+author: "David Milmont"
+date: "May 21, 2017"
+output: pdf_document
 ---
+
+## Loading Packages and Downloading Data - Creating Train, Test, Validate data sets 
 
 ```{r loading required libraries and importing data, echo=TRUE}
 library('kernlab')
@@ -13,6 +13,7 @@ library('RCurl')
 library('ggplot2')
 library('GGally')
 library('mlr')
+library('kknn')
 
 file <- getURL('https://d37djvu3ytnwxt.cloudfront.net/assets/courseware/v1/e39a3df780dacd5503df6a8322d72cd2/asset-v1:GTx+ISYE6501x+2T2017+type@asset+block/credit_card_data-headers.txt', ssl.verifyhost=FALSE, ssl.verifypeer=FALSE)
 
@@ -21,18 +22,38 @@ data <- read.csv(textConnection(file), header=T, sep = "\t")
 #Summary of data
 summarizeColumns(data)
 
+#Create data frame split 
+set.seed(546)
+
+#shuffling to ensure randomness
+data <- data[sample(nrow(data)),]
+
+#Getting idea of sizes 
+nrow(data) * .60
+nrow(data) * .20
+nrow(data) * .20
+
+#Spliting Manually - KISS method 
+train <- data[1:394,]
+test <- data[395:525,]
+validate <- data[526:654,]
+
 ```
+
+## Visualization
+Quick visual to see how the data is correlated
 ```{r, fig.height=10, fig.width=10, message=FALSE, warning=FALSE}
 
-#Quick visual to see how the data is correlated
 data[,11] <- as.factor(data[,11])
 GGally::ggpairs(data[, c(2:4,9:11)], aes(colour=R1))
 
-
 ```
 
 
 
+##Creating the Model - SVM
+
+Selected the polydot kernal as it has the highest accuracy. AFter runing MLR package for parameter hypertuning settled with C=256 for 96% accuracy 
 ```{r, echo=TRUE}
 
 #Creating matrix to train model 
@@ -40,7 +61,6 @@ x <- as.matrix(data[,1:10])
 #creating target 
 y <- data[,11]
 
-#selected the polydot kernal as it has the highest accuracy. AFter runing MLR package for parameter hypertuning settled with C=256 for 96% accuracy 
 model <- ksvm(y ~ x, type = "C-svc", kernal = "polydot", C=256, scaled = TRUE, cross = 5)
 
 a <- colSums(data[model@SVindex,1:10]*model@coef[[1]])
@@ -61,8 +81,10 @@ kernelf(model)
 
 ```
 
+##Kernal Selection
+
+Checking different kernals and their affect on prediction accuracy - selected polydot for final model 
 ```{r trying all kernals}
-#checking different kernals and their affect on prediction accuracy - selected polydot for final model 
 kernals <- c('rbfdot','polydot','vanilladot','tanhdot','laplacedot','besseldot','anovadot','splinedot','stringdot')
 
 for(kernal in kernals){
@@ -73,7 +95,9 @@ cat('\n',kernal,'pred: ', sum(pred == data[,11]) / nrow(data))
 ```
 
 
+##Paramater Hypertuning
 
+Utilized the MLR package for paramter tuning, selected C=256 for highest prediction accuracy
 ```{r}
 #Trying mlr package for parameter hypertuning 
 
@@ -100,6 +124,65 @@ par.svm <- train(ksvm, trainTask)
 predict.svm <- predict(par.svm, trainTask)
 
 
+
+```
+
+
+
+##Creating the Model - K Means Clustering 
+```{r}
+
+train.knn <- kknn(formula = formula(train$R1~.), train = train, test = test, k = 7, distance = 1,kernel = "optimal", scale=TRUE)
+
+fit <- fitted(train.knn)
+table(test$R1, fit)
+
+predict(train.knn, validate$R1)
+
+table(predict(fit,train),train$R1)
+
+fitted.values
+
+table(predict(knn, validate), valididate$R1)
+(fit.train2 <- train.kknn(train$R1~., ionosphere.learn, kmax = 15, 
+	kernel = c("triangular", "rectangular", "epanechnikov", "optimal"), distance = 2))
+table(predict(fit.train2, ionosphere.valid), ionosphere.valid$class)
+```
+
+##Training KKNN - Using Test, Train, And Validate data setes 
+```{r}
+
+train.knn <- kknn(formula = formula(train$R1~.), train = train, test = test, k = 7, distance = 1, kernel = "optimal", scale=TRUE)
+
+fit <- fitted(train.knn)
+
+table(test$R1, fit)
+
+
+(fit.train1 <- train.kknn(R1 ~ ., train, kmax = 3,
+	kernel = "optimal", distance = 1))
+
+(fit.train2 <- train.kknn(R1 ~ ., train, kmax = 4,
+	kernel = "optimal", distance = 1))
+
+(fit.train3 <- train.kknn(R1 ~ ., train, kmax = 5,
+	kernel = "optimal", distance = 1))
+
+(fit.train4 <- train.kknn(R1 ~ ., train, kmax = 6,
+	kernel = "optimal", distance = 1))
+
+
+table(predict(fit.train1, validate), validate$R1)
+table(predict(fit.train2, validate), validate$R1)
+table(predict(fit.train3, validate), validate$R1)
+table(predict(fit.train4, validate), validate$R1)
+
+plot(fit.train1)
+plot(fit.train2)
+plot(fit.train3)
+plot(fit.train4)
+
+cat('KKNN accuracy:',sum(fit == test[,11]) / nrow(test),'\n')
 
 ```
 

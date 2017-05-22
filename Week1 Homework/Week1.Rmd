@@ -1,6 +1,7 @@
 ---
 title: "R Notebook"
 output:
+  pdf_document: default
   html_notebook: default
   html_document: default
   word_document: default
@@ -17,36 +18,51 @@ file <- getURL('https://d37djvu3ytnwxt.cloudfront.net/assets/courseware/v1/e39a3
 
 data <- read.csv(textConnection(file), header=T, sep = "\t")
 
-head(data)
+#Summary of data
+summarizeColumns(data)
+
+```
+```{r, fig.height=10, fig.width=10, message=FALSE, warning=FALSE}
+
+#Quick visual to see how the data is correlated
+data[,11] <- as.factor(data[,11])
+GGally::ggpairs(data[, c(2:4,9:11)], aes(colour=R1))
+
 
 ```
 
 
+
 ```{r, echo=TRUE}
 
+#Creating matrix to train model 
 x <- as.matrix(data[,1:10])
+#creating target 
 y <- data[,11]
 
-model <- ksvm(y ~ x, type = "C-svc", kernal = "polydot", C=100, scaled = TRUE, cross = 3)
+#selected the polydot kernal as it has the highest accuracy. AFter runing MLR package for parameter hypertuning settled with C=256 for 96% accuracy 
+model <- ksvm(y ~ x, type = "C-svc", kernal = "polydot", C=256, scaled = TRUE, cross = 5)
 
 a <- colSums(data[model@SVindex,1:10]*model@coef[[1]])
-a
+cat('a:',a,'\n')
 
 a0 <- sum(a*data[1,1:10]) - model@b
-a0
+cat('a0:',a0,'\n')
 
 pred <- predict(model,data[,1:10])
 # pred
+data$prediction <- pred
 
 cat('SVM accuracy:',sum(pred == data[,11]) / nrow(data),'\n')
 
-b(model)
-error(model)
+cat('offset:',b(model),'\n')
+cat('error',error(model),'\n')
 kernelf(model)
 
 ```
 
 ```{r trying all kernals}
+#checking different kernals and their affect on prediction accuracy - selected polydot for final model 
 kernals <- c('rbfdot','polydot','vanilladot','tanhdot','laplacedot','besseldot','anovadot','splinedot','stringdot')
 
 for(kernal in kernals){
@@ -58,28 +74,32 @@ cat('\n',kernal,'pred: ', sum(pred == data[,11]) / nrow(data))
 
 
 
-```{r, fig.height=10, fig.width=10, message=FALSE, warning=FALSE}
-
-data[,11] <- as.factor(data[,11])
-GGally::ggpairs(data[, c(2:4,9:11)], aes(colour=R1))
-
-
-```
-
-
 ```{r}
-# results<-c() 
-# n=1 
-# results < NULL
-# for(i in seq(from=100, to=200, by=0))
-# { 
-#   model <- ksvm(x, y, scaled =TRUE, C=i, type ="C-svc", kernel="vanilladot",cross=5) 
-#   
-# pred <- predict(model, data[,1:10]) 
-# results[n] <- sum(pred == data[,11])/nrow(data) 
-# n=n+1 
-# }
-# 
-# results
+#Trying mlr package for parameter hypertuning 
+
+trainTask <- makeClassifTask(data = data, target = 'R1')
+trainTask
+learner <- makeLearner("classif.ksvm")
+
+ksvm <- makeLearner("classif.ksvm", predict.type = "response")
+getParamSet("classif.ksvm")
+
+set_cv <- makeResampleDesc("CV",iters = 3L)
+pssvm <- makeParamSet(
+makeDiscreteParam("C", values = 2^c(-8,-4,-2,8)), #cost parameters
+makeDiscreteParam("sigma", values = 2^c(-8,-4,0,4)) #RBF Kernel Parameter
+)
+
+ctrl <- makeTuneControlGrid()
+
+res <- tuneParams(ksvm, task = trainTask, resampling = set_cv, par.set = pssvm, control = ctrl,measures = acc)
+
+t.svm <- setHyperPars(ksvm, par.vals = res$x)
+
+par.svm <- train(ksvm, trainTask)
+predict.svm <- predict(par.svm, trainTask)
+
+
+
 ```
 

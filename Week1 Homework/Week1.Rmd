@@ -5,6 +5,10 @@ date: "May 21, 2017"
 output: pdf_document
 ---
 
+##Question 1: A situation at my job where a classification model would be useful is the area of fraud detection. Fraudulent transaction can be classified using predictors such as orderAmount, OrderVelocity, DaysasCustomer, TimeonLogin, FundingMethod.
+
+##Questions 2-3 are answered below
+
 ## Loading Packages and Downloading Data - Creating Train, Test, Validate data sets 
 
 ```{r loading required libraries and importing data, echo=TRUE}
@@ -51,7 +55,7 @@ GGally::ggpairs(data[, c(2:4,9:11)], aes(colour=R1))
 
 
 
-##Creating the Model - SVM
+##Question Number 2: Creating the Model - SVM
 
 Selected the polydot kernal as it has the highest accuracy. After runing MLR package for parameter hypertuning settled with C=2.73e+06 for 100% accuracy  - This results in a very small margin hyperplane. I suspect in a real life scenerio this is not optimal as the use case would benefit from some margin of error for review scenerios. 
 ```{r, echo=TRUE}
@@ -129,32 +133,32 @@ res
 ```
 
 
-##Training KKNN - Using Test, Train, And Validate data sets - results are KKNN accuracy: 0.9160305 
-```{r}
-
-train.knn <- kknn(formula = formula(train$R1~.), train = train, test = test, k = 2, distance = 1, kernel = "optimal", scale=TRUE)
+##Question Number 3:  Training KKNN - Using Test, Train, And Validate data sets - Attempted Leave One Out Cross Validation however I could not get the correct results
+```{r, eval=FALSE, message=FALSE, warning=FALSE, include=TRUE}
+#Initial Model Creation
+train.knn <- kknn(formula = formula(train$R1~.), train = train, test = test, k = 50, distance = 1, kernel = "optimal", scale=TRUE)
 
 fit <- fitted(train.knn)
 
-table(test$R1, fit)
+# table(test$R1, fit)
 
-
-(fit.train1 <- train.kknn(R1 ~ ., train, kmax = 99,
-	kernel = "optimal", distance = 1))
+#Used this for optimal parameters
+fit.train1 <- train.kknn(R1 ~ ., train, kmax = 99,
+	kernel = "optimal", distance = 1)
 
 fit.train1$best.parameters
 
-# table(predict(fit.train1, validate), validate$R1)
-# table(predict(fit.train2, validate), validate$R1)
-# table(predict(fit.train3, validate), validate$R1)
-# table(predict(fit.train4, validate), validate$R1)
-
-# plot(fit.train1)
-# plot(fit.train2)
-# plot(fit.train3)
-# plot(fit.train4)
-
 cat('KKNN accuracy:',sum(fit == test[,11]) / nrow(test),'\n')
+
+
+#Attempt with Leave One Out Cross Validation 
+result <- rep(0,nrow(data))
+
+for (i in nrow(data)){
+   knn <- kknn(R1~., data[-i,], data[i,], k=100, scale=TRUE)
+   
+   result[i] <- round(fitted(knn),0)
+}
 
 
 ```

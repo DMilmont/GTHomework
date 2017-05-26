@@ -43,3 +43,8 @@ table(irisCluster$cluster, iris$Species)
 #Plot of results
 irisCluster$cluster <- as.factor(irisCluster$cluster)
 ggplot(irisData, aes(Petal.Length, Petal.Width, color = irisCluster$cluster)) + geom_point()
+
+
+write.csv(tempData, file = 'tempData.csv')
+write.csv(crimeData, file = 'crimeData.csv')
+

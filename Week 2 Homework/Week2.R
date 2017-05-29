@@ -1,6 +1,7 @@
 #Loading Libraries
 library('ggplot2')
 library('mlr')
+library("outliers")
 
 
 #Loading data 
@@ -45,6 +46,19 @@ irisCluster$cluster <- as.factor(irisCluster$cluster)
 ggplot(irisData, aes(Petal.Length, Petal.Width, color = irisCluster$cluster)) + geom_point()
 
 
-write.csv(tempData, file = 'tempData.csv')
-write.csv(crimeData, file = 'crimeData.csv')
+# write.csv(tempData, file = 'tempData.csv')
+# write.csv(crimeData, file = 'crimeData.csv')
+
+
+#Question 3 
+# test to see whether there is an outlier in the last column 
+# (number of crimes per 100,000 people). Is the lowest-crime city an outlier? 
+# Is the highest-crime city an outlier? Use the grubbs.test function in the outliers 
+# package in R.
+
+outlier(crimeData)
+
+grubbs.test(crimeData$Crime, type = 20)
+
+
 

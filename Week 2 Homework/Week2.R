@@ -56,9 +56,28 @@ ggplot(irisData, aes(Petal.Length, Petal.Width, color = irisCluster$cluster)) + 
 # Is the highest-crime city an outlier? Use the grubbs.test function in the outliers 
 # package in R.
 
+#The grubbs test is based on the assumption of normal distributed data. 
+
+
 outlier(crimeData)
 
 grubbs.test(crimeData$Crime, type = 20)
+
+ggplot(crimeData, aes(Crime)) +
+  geom_histogram()
+
+
+#question 5 - when does summer end? 
+tempData <- read_csv("~/GTHomework/tempData.csv", 
+                     col_types = cols(X1 = col_skip()))
+
+#Summary of dataset 
+summary(tempData)
+testTemp <- tempData[,1:2]
+testTemp$z_value <- scores(testTemp$X1996, type = 'z')
+std
+
+q <- cusum(tempData$X1996, decision.interval = 10, se.shift = 2, add.stats = TRUE)
 
 
 

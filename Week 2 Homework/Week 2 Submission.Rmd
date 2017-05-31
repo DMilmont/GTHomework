@@ -1,0 +1,68 @@
+---
+title: "Week 2 Homework"
+output:
+  pdf_document: default
+  html_notebook: default
+---
+
+
+##Loding packages and datasets
+```{r, message=FALSE, warning=FALSE}
+#Loading Libraries
+library('ggplot2')
+library("outliers")
+library("qcc")
+
+
+#Loading data 
+
+#temperature data file
+tempData <- read.table("https://d37djvu3ytnwxt.cloudfront.net/assets/courseware/v1/592f3be3e90d2bdfe6a69f62374a1250/asset-v1:GTx+ISYE6501x+2T2017+type@asset+block/temps.txt", header = TRUE)
+
+#Crime data file 
+crimeData <- read.table("https://d37djvu3ytnwxt.cloudfront.net/assets/courseware/v1/17b85cea5d0e613bf08025ca2907b62f/asset-v1:GTx+ISYE6501x+2T2017+type@asset+block/uscrime.txt", header = TRUE)
+
+#iris data file 
+irisData <- iris
+
+#Set seed for reproducibility
+set.seed(156)
+
+```
+
+
+
+##CUSUM of temperature data to detect temperature changes to inidicate end of Summer. 
+```{r CUSUM}
+#Summary of dataset to get a general overview 
+summary(tempData)
+
+#stdev of temperaures
+cat("stdev of the temperature data: ",sd(as.matrix(tempData[,2:20])), "\n")
+temp_stdev <- sd(as.matrix(tempData[,2:20]))
+
+#Starting with the C value as 1 stdev of data
+c <- (1 * temp_stdev)
+
+#Starting with T as 3 stdevs above and below 
+tUpper <- (3 * temp_stdev)
+tLower <- (-3 * temp_stdev)
+
+cat("tUpper is: ", tUpper, "\ntLower is: ",tLower, "\n")
+  
+testTemp <- tempData[,1:2]
+testTemp$z_value <- scores(testTemp$X1996, type = 'z')
+
+
+
+q <- cusum(tempData[,2:20], decision.interval = temp_stdev, se.shift = temp_stdev, add.stats = TRUE)
+
+
+cusum(data_chemical,central=0,16, std.dev=0.0279,decision.interval = 4*0.0279, se.shift = 0.5*0.0279, plot = TRUE,
+ylab="Amount of substance Y ", xlab="Number of samples", title = "CUSUM control chart of the substance Y");
+
+attach(tempData)
+
+
+```
+

@@ -73,9 +73,12 @@ tempData <- read_csv("~/GTHomework/tempData.csv",
 
 #Summary of dataset 
 summary(tempData)
+
 testTemp <- tempData[,1:2]
 testTemp$z_value <- scores(testTemp$X1996, type = 'z')
-std
+
+#stdev of data 
+sd(as.matrix(tempData[,2:20]))
 
 q <- cusum(tempData$X1996, decision.interval = 10, se.shift = 2, add.stats = TRUE)
 

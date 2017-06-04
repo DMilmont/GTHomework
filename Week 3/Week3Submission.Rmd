@@ -1,0 +1,95 @@
+---
+title: "Week 3 homework"
+output: pdf_document
+---
+
+
+```{r, message=FALSE, warning=FALSE}
+#Loading packages
+library('ggplot2')
+library('GGally')
+library('stargazer')
+```
+
+```{r}
+
+#Loading data 
+
+#temperature data file
+tempData <- read.table("https://d37djvu3ytnwxt.cloudfront.net/assets/courseware/v1/592f3be3e90d2bdfe6a69f62374a1250/asset-v1:GTx+ISYE6501x+2T2017+type@asset+block/temps.txt", header = TRUE)
+
+#Crime data file 
+crimeData <- read.table("http://www.statsci.org/data/general/uscrime.txt", header = TRUE)
+
+#Set seed for reproducibility
+set.seed(156)
+
+# stargazer(tempData)
+# stargazer(crimeData)
+
+```
+
+------
+
+#Summary of Datasets for Week 3 Homework
+
+\begin{table}[!htbp] \centering 
+  \caption{Summary of Temperature Data} 
+  \label{} 
+\begin{tabular}{@{\extracolsep{5pt}}lccccc} 
+\\[-1.8ex]\hline 
+\hline \\[-1.8ex] 
+Statistic & \multicolumn{1}{c}{N} & \multicolumn{1}{c}{Mean} & \multicolumn{1}{c}{St. Dev.} & \multicolumn{1}{c}{Min} & \multicolumn{1}{c}{Max} \\ 
+\hline \\[-1.8ex] 
+M & 47 & 13.857 & 1.257 & 11.900 & 17.700 \\ 
+So & 47 & 0.340 & 0.479 & 0 & 1 \\ 
+Ed & 47 & 10.564 & 1.119 & 8.700 & 12.200 \\ 
+Po1 & 47 & 8.500 & 2.972 & 4.500 & 16.600 \\ 
+Po2 & 47 & 8.023 & 2.796 & 4.100 & 15.700 \\ 
+LF & 47 & 0.561 & 0.040 & 0.480 & 0.641 \\ 
+M.F & 47 & 98.302 & 2.947 & 93.400 & 107.100 \\ 
+Pop & 47 & 36.617 & 38.071 & 3 & 168 \\ 
+NW & 47 & 10.113 & 10.283 & 0.200 & 42.300 \\ 
+U1 & 47 & 0.095 & 0.018 & 0.070 & 0.142 \\ 
+U2 & 47 & 3.398 & 0.845 & 2.000 & 5.800 \\ 
+Wealth & 47 & 5,253.830 & 964.909 & 2,880 & 6,890 \\ 
+Ineq & 47 & 19.400 & 3.990 & 12.600 & 27.600 \\ 
+Prob & 47 & 0.047 & 0.023 & 0.007 & 0.120 \\ 
+Time & 47 & 26.598 & 7.087 & 12.200 & 44.000 \\ 
+Crime & 47 & 905.085 & 386.763 & 342 & 1,993 \\ 
+\hline \\[-1.8ex] 
+\end{tabular} 
+\end{table} 
+
+
+\begin{table}[!htbp] \centering 
+  \caption{Summary of Crime Data} 
+  \label{} 
+\begin{tabular}{@{\extracolsep{5pt}}lccccc} 
+\\[-1.8ex]\hline 
+\hline \\[-1.8ex] 
+Statistic & \multicolumn{1}{c}{N} & \multicolumn{1}{c}{Mean} & \multicolumn{1}{c}{St. Dev.} & \multicolumn{1}{c}{Min} & \multicolumn{1}{c}{Max} \\ 
+\hline \\[-1.8ex] 
+X1996 & 123 & 83.715 & 8.548 & 60 & 99 \\ 
+X1997 & 123 & 81.675 & 9.319 & 55 & 95 \\ 
+X1998 & 123 & 84.260 & 6.409 & 63 & 95 \\ 
+X1999 & 123 & 83.358 & 9.723 & 57 & 99 \\ 
+X2000 & 123 & 84.033 & 9.519 & 55 & 101 \\ 
+X2001 & 123 & 81.553 & 8.225 & 51 & 93 \\ 
+X2002 & 123 & 83.585 & 9.426 & 57 & 97 \\ 
+X2003 & 123 & 81.480 & 7.018 & 57 & 91 \\ 
+X2004 & 123 & 81.764 & 6.663 & 62 & 95 \\ 
+X2005 & 123 & 83.358 & 7.733 & 54 & 94 \\ 
+X2006 & 123 & 83.049 & 9.794 & 53 & 98 \\ 
+X2007 & 123 & 85.398 & 9.033 & 59 & 104 \\ 
+X2008 & 123 & 82.512 & 8.733 & 50 & 95 \\ 
+X2009 & 123 & 80.992 & 9.013 & 51 & 95 \\ 
+X2010 & 123 & 87.211 & 7.445 & 67 & 97 \\ 
+X2011 & 123 & 85.276 & 9.931 & 59 & 99 \\ 
+X2012 & 123 & 84.650 & 9.252 & 56 & 105 \\ 
+X2013 & 123 & 81.667 & 7.727 & 56 & 92 \\ 
+X2014 & 123 & 83.943 & 6.591 & 63 & 95 \\ 
+X2015 & 123 & 83.301 & 8.709 & 56 & 97 \\ 
+\hline \\[-1.8ex] 
+\end{tabular} 
+\end{table} 

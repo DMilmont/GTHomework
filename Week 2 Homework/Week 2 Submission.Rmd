@@ -1,8 +1,7 @@
 ---
 title: "Week 2 Homework"
 output:
-  pdf_document: default
-  html_notebook: default
+  word_document: default
 ---
 
 
@@ -30,11 +29,70 @@ set.seed(156)
 
 ```
 
+##Question 1: 
+A situtation where a clustering model would be appropriate. In my current job a clustering technique would be useful to find different customer cohorts that could be divided by certain behaviors. predictors could be OrderFrequency, OrderAmount, Tenure, MarketingType, Age
 
 
-##CUSUM of temperature data to detect temperature changes to inidicate end of Summer. 
+
+##Question 2: kmeans clustering to determine species from the iris data set. 
+
+I chose the cluster amount by examining the data and finding that there are 3 species in the dataset. Accuracy is 94% 
+
+```{r}
+#Visualize the dataset:
+ggplot(irisData, aes(Petal.Length, Petal.Width, color = Species)) + geom_point()
+ggplot(irisData, aes(Sepal.Length, Sepal.Width, color = Species)) + geom_point()
+# these plots demonstrate that there are only three distinct species therefore the correct cluster amount should be 3
+
+#Most accurate column selection for clustering at 94% 
+irisCluster34 <- kmeans(iris[, 3:4], 3)
+irisCluster34
+
+table(irisCluster34$cluster, iris$Species)
+#----------------------------------------------
+
+#Plot of results
+irisCluster34$cluster <- as.factor(irisCluster34$cluster)
+ggplot(irisData, aes(Petal.Length, Petal.Width, color = irisCluster34$cluster)) + geom_point()
+
+```
+
+
+##Question 3: Outliers 
+
+Conclusion: I found that the highest crime city is an outlier, however the lowest crime city is not as it should fit in the normal distribution. 
+
+```{r}
+#The grubbs test is based on the assumption of normal distributed data. plots and shapiro test to determine if it meets this before running outlier package 
+
+#this plot indicates to me that the data is fairly normal with a long tail where there may be some outliers 
+plot(density(crimeData$Crime))
+
+#as the p value is less than 0.05 we can assume there is normal distribution 
+shapiro.test(crimeData$Crime)
+
+#another technique to determine normality. Because the lines are not in a straight line in the upper quantiles this is indicitative of a heavy tail however the data seems fairly normally distributed 
+qqnorm(crimeData$Crime)
+
+#the density plot seems to show a heavy tail on the upper end so type=10 is used to find the correct outlier. 
+grubbs.outlier <- grubbs.test(crimeData$Crime, type = 10)
+grubbs.outlier$alternative
+
+#I take this to mean that the highest crime city is an outlier, however the lowest crime city is not as it should fit in the normal distribution 
+```
+
+##Question 4 CUSUM example
+An area cusum would be useful in my job now is detecting if there is a change in order volumes by day. Most daily changes are well within 3 stdevs so CUSUM would work well. I would choose the critical value as 1 stdev of the last 3 months worth of data and the threshold would be determined by running the cusum model on periods of time where we know there was a shift and use that as a baseline to determine a good threshold value. 
+
+
+##Question 5: CUSUM of temperature data to detect temperature changes to inidicate end of Summer. 
+
+1: I used the CUSUM function from the package qcc. I ran this funtion against each year in the dataset and found the minimum date for each year that the shift occured. I then took a mean of each year to determine the date in which summer ends. Answer: 30th September. 
+
+2: After looking at the cusum charts for each year and examining the results output across all years I cannot conclude that the summer climate has gotten warmer. Some years it is warmer but others are not so warm. 2001 through 2003 were very warm as were 2011- 2013
 ```{r CUSUM}
-#Summary of dataset to get a general overview 
+#data exploration section --------------------------------------------------
+#Summary of dataset to get a general overview
 summary(tempData)
 
 #stdev of temperaures
@@ -50,19 +108,27 @@ tLower <- (-3 * temp_stdev)
 
 cat("tUpper is: ", tUpper, "\ntLower is: ",tLower, "\n")
   
-testTemp <- tempData[,1:2]
-testTemp$z_value <- scores(testTemp$X1996, type = 'z')
+#targetValue temperature 
+target <- mean(as.matrix(tempData[,2]))
 
+##-------------------------------------------------------------------------
 
+##building the cusum model using the qcc package - se.shift was optimized through manual testing to find the number that produced the best results
+results <- NULL
+for (i in 2:20) {
+  q <- cusum(tempData[,c(1,i)], decision.interval = temp_stdev, se.shift = 0.1, add.stats = TRUE)
+  results[i] <- min(unlist(q$violations["lower"]))
 
-q <- cusum(tempData[,2:20], decision.interval = temp_stdev, se.shift = temp_stdev, add.stats = TRUE)
+}
 
+tempData[,1] <- as.character(tempData[,1])
+results <- unlist(results)
+daymean <- round(mean(results,na.rm = TRUE),0)
 
-cusum(data_chemical,central=0,16, std.dev=0.0279,decision.interval = 4*0.0279, se.shift = 0.5*0.0279, plot = TRUE,
-ylab="Amount of substance Y ", xlab="Number of samples", title = "CUSUM control chart of the substance Y");
+#results
+cat("average day that summer ends: ",tempData[daymean,1])
 
-attach(tempData)
-
+results
 
 ```
 

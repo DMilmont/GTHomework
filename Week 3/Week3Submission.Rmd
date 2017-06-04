@@ -6,9 +6,9 @@ output: pdf_document
 
 ```{r, message=FALSE, warning=FALSE}
 #Loading packages
-library('ggplot2')
 library('GGally')
 library('stargazer')
+library('tidyverse')
 ```
 
 ```{r}
@@ -93,3 +93,112 @@ X2015 & 123 & 83.301 & 8.709 & 56 & 97 \\
 \hline \\[-1.8ex] 
 \end{tabular} 
 \end{table} 
+
+
+------
+
+
+#Crime Data Exploration and Transformation
+linear models work best with gaussian distributions. Many of the predictors are skewed so I log transformed them to better fit a gaussian distribution. 
+
+```{r Crime Data Exploration and Transformation}
+
+crimeData %>%
+  keep(is.numeric) %>% 
+  gather() %>% 
+  ggplot(aes(value)) +
+    facet_wrap(~ key, scales = "free") +
+    geom_density() +
+    labs(title = "Crime Data Density Plots")
+
+#log transformation to better fit a gaussian distrubution - did not transform column 'SO' as it is logical
+log(crimeData[,c(1,3:16)]) %>%
+  keep(is.numeric) %>% 
+  gather() %>% 
+  ggplot(aes(value)) +
+    facet_wrap(~ key, scales = "free") +
+    geom_density() +
+    labs(title = "Log Transformed Crime Data Density Plots")
+
+
+#Building New Log dataset 
+logCrimeData <- log(crimeData[,c(1,3:16)])
+logCrimeData$So <- crimeData$So
+```
+
+#Crime Data Linear Model
+After settling on a log transformed dataset, I will now build the model. 
+```{r Crime data modeling}
+crimeModelLog <- lm(Crime ~ ., data = logCrimeData)
+crimeModel <- lm(Crime ~ ., data = crimeData)
+
+# Obtain predicted and residual values
+logCrimeData$predicted <- predict(crimeModelLog)
+logCrimeData$residuals <- residuals(crimeModelLog)
+
+crimeData$predicted <- predict(crimeModel)
+crimeData$residuals <- residuals(crimeModel)
+
+#Creating residual df for plotitng 
+modelResiduals <- data.frame(data=(cbind(residuals(crimeModel),residuals(crimeModelLog))))
+colnames(modelResiduals) <- c('Normal', 'Log')
+
+---------------------
+# Create plot
+crimeData %>% 
+  gather(key = "iv", value = "x", -Crime, -predicted, -residuals) %>%
+  ggplot(aes(x = x, y = Crime)) +
+  geom_segment(aes(xend = x, yend = predicted), alpha = .2) +
+  geom_point(aes(color = residuals)) +
+  scale_color_gradient2(low = "blue", mid = "white", high = "red") +
+  guides(color = FALSE) +
+  geom_point(aes(y = predicted), shape = 1) +
+  facet_wrap(~ iv, scales = "free") 
+
+logCrimeData %>% 
+  gather(key = "iv", value = "x", -Crime, -predicted, -residuals) %>%
+  ggplot(aes(x = x, y = Crime)) +
+  geom_segment(aes(xend = x, yend = predicted), alpha = .2) +
+  geom_point(aes(color = residuals)) +
+  scale_color_gradient2(low = "blue", mid = "white", high = "red") +
+  guides(color = FALSE) +
+  geom_point(aes(y = predicted), shape = 1) +
+  facet_wrap(~ iv, scales = "free") 
+-------------------------
+  
+
+
+modelResiduals %>% 
+  ggplot() +
+  geom_density() +
+  facet_wrap(facets = colnames())
+
+ggplot(modelResiduals, aes(x=values)) + geom_density(aes(group=Normal))
+
+
+ggplot(dfs, aes(x=values)) + geom_density(aes(group=ind, colour=ind, fill=ind), alpha=0.3)
+```
+```{r}
+d <- iris
+
+# Fit the model
+fit <- lm(Sepal.Width ~ ., data = iris)
+
+# Obtain predicted and residual values
+d$predicted <- predict(fit)
+d$residuals <- residuals(fit)
+
+# Create plot
+d %>% 
+  gather(key = "iv", value = "x", -Sepal.Width, -predicted, -residuals) %>%
+  ggplot(aes(x = x, y = Sepal.Width)) +
+  geom_segment(aes(xend = x, yend = predicted), alpha = .2) +
+  geom_point(aes(color = residuals)) +
+  scale_color_gradient2(low = "blue", mid = "white", high = "red") +
+  guides(color = FALSE) +
+  geom_point(aes(y = predicted), shape = 1) +
+  facet_grid(~ iv, scales = "free") +
+  theme_bw()
+```
+
+

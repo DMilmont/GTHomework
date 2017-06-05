@@ -142,63 +142,21 @@ crimeData$residuals <- residuals(crimeModel)
 #Creating residual df for plotitng 
 modelResiduals <- data.frame(data=(cbind(residuals(crimeModel),residuals(crimeModelLog))))
 colnames(modelResiduals) <- c('Normal', 'Log')
-
----------------------
-# Create plot
-crimeData %>% 
-  gather(key = "iv", value = "x", -Crime, -predicted, -residuals) %>%
-  ggplot(aes(x = x, y = Crime)) +
-  geom_segment(aes(xend = x, yend = predicted), alpha = .2) +
-  geom_point(aes(color = residuals)) +
-  scale_color_gradient2(low = "blue", mid = "white", high = "red") +
-  guides(color = FALSE) +
-  geom_point(aes(y = predicted), shape = 1) +
-  facet_wrap(~ iv, scales = "free") 
-
-logCrimeData %>% 
-  gather(key = "iv", value = "x", -Crime, -predicted, -residuals) %>%
-  ggplot(aes(x = x, y = Crime)) +
-  geom_segment(aes(xend = x, yend = predicted), alpha = .2) +
-  geom_point(aes(color = residuals)) +
-  scale_color_gradient2(low = "blue", mid = "white", high = "red") +
-  guides(color = FALSE) +
-  geom_point(aes(y = predicted), shape = 1) +
-  facet_wrap(~ iv, scales = "free") 
--------------------------
   
+  
+```
 
+#plotting the residuals
+```{r residual plots }
+#qqplots to determine if residuals are normally distributed. Log trasnformed model looks more normally distributed. 
+modelResiduals %>% 
+  ggplot(aes(sample=modelResiduals$Log)) +
+  stat_qq() +
+  labs(title = "Log Transformed Residuals")
 
 modelResiduals %>% 
-  ggplot() +
-  geom_density() +
-  facet_wrap(facets = colnames())
-
-ggplot(modelResiduals, aes(x=values)) + geom_density(aes(group=Normal))
-
-
-ggplot(dfs, aes(x=values)) + geom_density(aes(group=ind, colour=ind, fill=ind), alpha=0.3)
+  ggplot(aes(sample=modelResiduals$Normal)) +
+  stat_qq() +
+  labs(title = "Normal Residuals")
 ```
-```{r}
-d <- iris
-
-# Fit the model
-fit <- lm(Sepal.Width ~ ., data = iris)
-
-# Obtain predicted and residual values
-d$predicted <- predict(fit)
-d$residuals <- residuals(fit)
-
-# Create plot
-d %>% 
-  gather(key = "iv", value = "x", -Sepal.Width, -predicted, -residuals) %>%
-  ggplot(aes(x = x, y = Sepal.Width)) +
-  geom_segment(aes(xend = x, yend = predicted), alpha = .2) +
-  geom_point(aes(color = residuals)) +
-  scale_color_gradient2(low = "blue", mid = "white", high = "red") +
-  guides(color = FALSE) +
-  geom_point(aes(y = predicted), shape = 1) +
-  facet_grid(~ iv, scales = "free") +
-  theme_bw()
-```
-
 

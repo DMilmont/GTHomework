@@ -9,6 +9,7 @@ output: pdf_document
 library('GGally')
 library('stargazer')
 library('tidyverse')
+library('usdm')
 ```
 
 ```{r}
@@ -124,10 +125,15 @@ log(crimeData[,c(1,3:16)]) %>%
 #Building New Log dataset 
 logCrimeData <- log(crimeData[,c(1,3:16)])
 logCrimeData$So <- crimeData$So
+
+#testing for collinear variables 
+vif()
+
+vifcor()
 ```
 
 #Crime Data Linear Model
-After settling on a log transformed dataset, I will now build the model. 
+Building linear models for both log and normal datasets to compare
 ```{r Crime data modeling}
 crimeModelLog <- lm(Crime ~ ., data = logCrimeData)
 crimeModel <- lm(Crime ~ ., data = crimeData)
@@ -143,12 +149,14 @@ crimeData$residuals <- residuals(crimeModel)
 modelResiduals <- data.frame(data=(cbind(residuals(crimeModel),residuals(crimeModelLog))))
 colnames(modelResiduals) <- c('Normal', 'Log')
   
+summary(crimeModelLog)
+summary(crimeModel)
   
 ```
 
 #plotting the residuals
 ```{r residual plots }
-#qqplots to determine if residuals are normally distributed. Log trasnformed model looks more normally distributed. 
+#qqplots to determine if residuals are normally distributed. Log transformed model has a better looking distribution indicating to me that it is the better model. 
 modelResiduals %>% 
   ggplot(aes(sample=modelResiduals$Log)) +
   stat_qq() +

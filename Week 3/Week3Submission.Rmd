@@ -2,8 +2,6 @@
 title: "Week 3 homework"
 output: pdf_document
 ---
-
-
 ```{r, message=FALSE, warning=FALSE}
 #Loading packages
 library('GGally')
@@ -30,9 +28,25 @@ set.seed(156)
 
 ```
 
+#Question 1
+Describe a situation or problem from your job, everyday life, current events, etc., for which exponential
+smoothing would be appropriate. What data would you need? Would you expect the value of a (the
+first smoothing parameter) to be closer to 0 or 1, and why?
+
+#Answer 
+A situation where exponential smoothing might be used is to predict the value of a stock in the stock market. This works because it is time series data. The data that would be needed is a date and a stock price for each date. I would expect the value of a to be closer to 1 as it has less smoothing and gives more value to recent data. This is important as I believe a stocks price is tied to the most recent history. 
+
+
 ------
 
-#Summary of Datasets for Week 3 Homework
+#Question 2 
+Using the 20 years of daily high temperature data for Atlanta (July through October) build and use an exponential smoothing model to help make a judgment of whether the
+unofficial end of summer has gotten later over the 20 years. 
+
+#Answer is below:
+
+
+#Summary of Temperature Data 
 
 \begin{table}[!htbp] \centering 
   \caption{Summary of Temperature Data} 
@@ -63,6 +77,39 @@ Crime & 47 & 905.085 & 386.763 & 342 & 1,993 \\
 \end{table} 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+------
+
+#Question 3 
+Describe a situation or problem from your job, everyday life, current events, etc., for which a linear
+regression model would be appropriate. List some (up to 5) predictors that you might use.
+
+#Answer
+A situation that a linear regression model would be useful is to predict the value of a house. Good predictors for this would be square_footage, NumberofRooms, NumberofBathrooms, Plotsize and garagesize. 
+
+------
+
+#Question 4
+Predict the observed crime rate in a city. Show your model (factors used and their coefficients), the software output, and the quality of fit.
+
+#Answer is below: 
+
+#Summary of Crime Data 
 \begin{table}[!htbp] \centering 
   \caption{Summary of Crime Data} 
   \label{} 
@@ -96,11 +143,13 @@ X2015 & 123 & 83.301 & 8.709 & 56 & 97 \\
 \end{table} 
 
 
-------
+
+
 
 
 #Crime Data Exploration and Transformation
 linear models work best with gaussian distributions. Many of the predictors are skewed so I log transformed them to better fit a gaussian distribution. 
+I am plotting both log and non log datasets to see the distributions.
 
 ```{r Crime Data Exploration and Transformation}
 
@@ -122,18 +171,40 @@ log(crimeData[,c(1,3:16)]) %>%
     labs(title = "Log Transformed Crime Data Density Plots")
 
 
+
 #Building New Log dataset 
-logCrimeData <- log(crimeData[,c(1,3:16)])
+logCrimeData <- log(crimeData[,c(1,3:4,6:16)])
 logCrimeData$So <- crimeData$So
 
-#testing for collinear variables 
-vif()
+#vif(crimeData)
 
-vifcor()
 ```
 
+#Test for collinearity
+This shows me that po1 and po2 are collinear and there are no need for both in the model. 
+A VIF greater than 10 is a signal that the model has a collinearity problem. 
+Because Wealth and Ineq are near 10 and I believe they are important factors in predicting a crime rate I am leaving them in. 
+
+% VIF test
+M	3.411365			
+So	5.342925			
+Ed	6.967803			
+Po1	118.641813			
+Po2	117.546092			
+LF	3.743340			
+M.F	3.897988			
+Pop	2.569876			
+NW	4.753696			
+U1	6.533978
+U2	5.944206			
+Wealth	10.897084			
+Ineq	12.030316			
+Prob	3.328492			
+Time	2.739674	
+
+
 #Crime Data Linear Model
-Building linear models for both log and normal datasets to compare
+Building linear models for both log and normal datasets to compare - chose log-transformed model for best results
 ```{r Crime data modeling}
 crimeModelLog <- lm(Crime ~ ., data = logCrimeData)
 crimeModel <- lm(Crime ~ ., data = crimeData)
@@ -148,13 +219,19 @@ crimeData$residuals <- residuals(crimeModel)
 #Creating residual df for plotitng 
 modelResiduals <- data.frame(data=(cbind(residuals(crimeModel),residuals(crimeModelLog))))
 colnames(modelResiduals) <- c('Normal', 'Log')
-  
+
+#summary to see accuracy 
 summary(crimeModelLog)
-summary(crimeModel)
+
+#coefficients and formula 
+crimeModelLog
+
   
 ```
 
 #plotting the residuals
+Ensuring that my residuals are normally distributed. A normally distributed residual plot is a sign of a good linear model. 
+The log model is closest to normal distribution. 
 ```{r residual plots }
 #qqplots to determine if residuals are normally distributed. Log transformed model has a better looking distribution indicating to me that it is the better model. 
 modelResiduals %>% 
@@ -168,3 +245,4 @@ modelResiduals %>%
   labs(title = "Normal Residuals")
 ```
 
+------

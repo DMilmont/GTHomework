@@ -79,7 +79,7 @@ Crime & 47 & 905.085 & 386.763 & 342 & 1,993 \\
 
 
 
-
+TempTS <- ts(tempData[,2:21],frequency=123)
 
 
 

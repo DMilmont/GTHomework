@@ -1,6 +1,6 @@
 ---
 title: "Week 3 homework"
-output: pdf_document
+output: word_document
 ---
 ```{r, message=FALSE, warning=FALSE}
 #Loading packages
@@ -45,6 +45,7 @@ unofficial end of summer has gotten later over the 20 years.
 
 #Answer is below:
 
+Based on the holtwinters model I built and decompsing the time series I do not believe the unofficial end of summer has become later over the 20 years. I chose a alpha parameter as 0.5 because this is the middle ground of using more recent data as important but understanding that the long term weather data is also important for seasonality. 
 
 #Summary of Temperature Data 
 
@@ -77,20 +78,34 @@ Crime & 47 & 905.085 & 386.763 & 342 & 1,993 \\
 \end{table} 
 
 
+```{r}
+#Creating time series 
+tempTS <- ts(as.vector(unlist(tempData[2:21])), start = c(1996,7), frequency = 123)
+
+#building holt winters model 
+hw <- HoltWinters(tempTS,seasonal = "mult", alpha = 0.5, gamma = FALSE)
+hw$alpha
+hw$beta
+hw$gamma
+
+#plot of model 
+plot(hw)
+
+#decomposition graph to see elements in model 
+d <- decompose(tempTS)
+plot(d)
+
+#Holt Winters prediction
+p <- predict(hw, 123, prediction.interval = TRUE, level = 0.95)
+plot(p)
 
 
-TempTS <- ts(tempData[,2:21],frequency=123)
+plot(hw, p)
 
-
-
-
-
-
-
-
-
-
-
+#This plot should show if summer is becoming shorter over time, based on this I do not think it is. 
+#In fact you can see that there was a recent warming period from 2010 to 2014. 
+plot(d$trend)
+```
 
 
 ------

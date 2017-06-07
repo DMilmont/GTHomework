@@ -97,10 +97,9 @@ plot(d)
 
 #Holt Winters prediction
 p <- predict(hw, 123, prediction.interval = TRUE, level = 0.95)
-plot(p)
 
 
-plot(hw, p)
+plot(hw,p)
 
 #This plot should show if summer is becoming shorter over time, based on this I do not think it is. 
 #In fact you can see that there was a recent warming period from 2010 to 2014. 

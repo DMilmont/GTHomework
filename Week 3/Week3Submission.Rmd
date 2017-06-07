@@ -1,6 +1,8 @@
 ---
 title: "Week 3 homework"
-output: pdf_document
+output:
+  word_document: default
+  pdf_document: default
 ---
 ```{r, message=FALSE, warning=FALSE}
 #Loading packages

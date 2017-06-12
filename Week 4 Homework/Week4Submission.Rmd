@@ -1,0 +1,24 @@
+---
+title: "Week 4 Homework"
+output:
+  word_document: default
+  pdf_document: default
+  html_notebook: default
+---
+
+
+```{r}
+library('GGally')
+library('tidyverse')
+library('randomForest')
+library('rpart')
+
+
+#Crime data file 
+crimeData <- read.table("http://www.statsci.org/data/general/uscrime.txt", header = TRUE)
+
+#Set seed for reproducibility
+set.seed(156)
+
+```
+

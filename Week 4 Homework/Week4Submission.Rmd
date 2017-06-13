@@ -1,13 +1,9 @@
 ---
 title: "Week 4 Homework"
-output:
-  word_document: default
-  pdf_document: default
-  html_notebook: default
 ---
 
 
-```{r}
+```{r, message=FALSE, warning=FALSE}
 library('GGally')
 library('tidyverse')
 library('randomForest')
@@ -21,4 +17,70 @@ crimeData <- read.table("http://www.statsci.org/data/general/uscrime.txt", heade
 set.seed(156)
 
 ```
+
+
+
+#Question 1 
+apply Principal Component Analysis and then create a regression model using the first 4 principal components. Specify your new model in terms
+of the original variables (not the principal components), and compare its quality to that of your solution
+to Homework 3 Question 4. 
+
+```{r}
+
+#Performing PCA on original crime dataset, removing response variable. 
+CrimePCA <- prcomp(crimeData[,-16], center = TRUE, scale. = TRUE)
+
+#The first four principal components account for 79% of the variance in the data. This can be seen with the screeplot and summary. 
+summary(CrimePCA)
+screeplot(CrimePCA, type = "lines")
+
+#rotation matrix of first 4 Principal Components
+CrimePCA$rotation[,1:4]
+
+#Checking to ensure that principal components are orthogonal - perfect correlation across the diagonal confirms this. 
+cor(CrimePCA$x[,1:4])
+
+# creating dataframe with principal components and response variable
+CrimePCAData <- cbind(crimeData[,16],data.frame(CrimePCA$x[,1:4]))
+colnames(CrimePCAData)[1] <- 'Crime'
+
+#creating linear model using 1st 4 principal components - R squared value is only 0.3. PC3 and PC4 seem to be statistically insignificant to the model which tells me that the first 4 principal components do not produce a better result from the original model. 
+CrimePCA.lm <- lm(Crime ~., data = CrimePCAData)
+summary(CrimePCA.lm)
+
+#converting rotation matrix to model coefficients
+betas <- CrimePCA$rotation[,1:4] %*% CrimePCA.lm$coefficients[-1]
+colnames(betas)[1] <- 'coefficients'
+betas
+
+#original linear model from Week 3 
+crimeModel <- lm(Crime ~ ., data = crimeData)
+
+#using ANOVA to compare the PCA model vs the original model. This shows the P value being 7.857e-06 which is less than .05 so we can reject the null hypothesis. The models are different. 
+anova(CrimePCA.lm,crimeModel)
+
+crimeData$predictedWeek3 <-  predict(crimeModel)
+crimeData$predictedWeek4 <- predict(CrimePCA.lm)
+
+# Obtain  residual values
+crimeData$residualsWeek3 <- residuals(crimeModel)
+crimeData$residualsWeek4 <- residuals(CrimePCA.lm)
+
+#Creating residual df for plotitng 
+modelResiduals <- data.frame(data=(cbind(residuals(crimeModel),residuals(CrimePCA.lm))))
+colnames(modelResiduals) <- c('Week3', 'Week4')
+
+#qqplots of the residuals of both models show they are fairly normally distributed. 
+modelResiduals %>% 
+  ggplot(aes(sample=modelResiduals$Week3)) +
+  stat_qq() +
+  labs(title = "Week3 Residuals")
+
+modelResiduals %>% 
+  ggplot(aes(sample=modelResiduals$Week4)) +
+  stat_qq() +
+  labs(title = "Week4 Residuals")
+
+```
+
 

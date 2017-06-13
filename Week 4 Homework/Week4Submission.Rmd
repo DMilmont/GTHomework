@@ -1,5 +1,6 @@
 ---
 title: "Week 4 Homework"
+output: pdf_document
 ---
 
 
@@ -13,6 +14,9 @@ library('rpart')
 #Crime data file 
 crimeData <- read.table("http://www.statsci.org/data/general/uscrime.txt", header = TRUE)
 
+#German Credit Data
+germanCreditData <-as.data.frame(read.table("http://archive.ics.uci.edu/ml/machine-learning-databases/statlog/german/german.data"))
+
 #Set seed for reproducibility
 set.seed(156)
 
@@ -24,6 +28,8 @@ set.seed(156)
 apply Principal Component Analysis and then create a regression model using the first 4 principal components. Specify your new model in terms
 of the original variables (not the principal components), and compare its quality to that of your solution
 to Homework 3 Question 4. 
+
+The results I obtained indicate that my original model from Week 3 was a more accurate model. 
 
 ```{r}
 
@@ -83,4 +89,74 @@ modelResiduals %>%
 
 ```
 
+
+#Question 2 
+Using the same crime data set as in Homework 3 Question 4, find the best model you can using (a) a
+regression tree model, and (b) a random forest model. For each model, describe one or two qualitative takeaways you get from analyzing the results
+
+Rpart Insights: 
+The variable importance from the model is telling me that Po1 and Po2 are both very important, but very similar. Meaning only one is actually needed. Wealth and Ineq are also very similar but importance. Prob and M are the next two most importance variables. RPart chose very similar variables as most important compared to randomForest. 
+
+
+Random Forest Insights:
+The plot showing MSE tells me that Po1 and Po2 are very similar in importance so only one is really needed in the model. NW is the next most important variable followed by Prob, then Wealth. Node purity also tells me that Po1 and Po2 are very similar in importance, followed by Prob, and Wealth and NW are very similar, followed by Pop. Both of these show that most of the variance can be explained with Po1, Prob, Wealth, and NW. It also shows that there are many variables that are similar to each other in importance and we could throw some out if need be while still maintaining the same level of accuracy. 
+
+My random forest model is able to predict on average 73% of the actual crime values. 
+
+Another insight that I take from these models is that they show collinearity of predictors. This is a very useful tool which can help reduce dimensionality in models. The collinearity that is being shown in these models is also what PCA and a VIF test are showing as well. This is a universal takeaway from the tree family models that can be applied to modeling the same dataset with other methods. 
+
+```{r}
+CrimeData.2 <- read.table("http://www.statsci.org/data/general/uscrime.txt", header = TRUE)
+crimeDataRF <- CrimeData.2
+crimeDataRpart <- CrimeData.2
+
+#(b) regression tree model 
+Crime.Rpart <- rpart(Crime ~ ., data = crimeDataRpart, method = "anova")
+summary(Crime.Rpart)
+
+#variable importance 
+Crime.Rpart$variable.importance
+
+#---------------------------------------------------------------------------------
+#(a) RandomForest Model 
+Crime.RF <- randomForest(Crime ~ ., data = crimeDataRpart, importance = TRUE)
+Crime.RF
+
+#plotting the importance of variables in the Randomforest model.  
+varImpPlot(Crime.RF)
+
+RFpred <- predict(Crime.RF)
+
+crimeDataRF[,17] <- predict(Crime.RF)
+colnames(crimeDataRF)[17] <- 'RFprediction'
+
+#showing predictions and percent correct to prediction 
+crimeDataRF$predictionVariance <- abs(crimeDataRF$RFprediction - crimeDataRF$Crime)
+crimeDataRF$predictionPrcntCorrect <- 1 - (round(crimeDataRF$predictionVariance / crimeDataRF$Crime,2))
+
+#This tells me that my random Forest is on average 73% correct in predicting crime. 
+mean(crimeDataRF$predictionPrcntCorrect)
+
+```
+
+
+#Question 3
+Describe a situation or problem from your job, everyday life, current events, etc., for which a logistic regression model would be appropriate. List some (up to 5) predictors that you might use.
+
+#Answer:
+Logistic regression would be useful at work to determine the probability of successfully winning a bank charge back. Predictors that would be good in this model would be: PrincipalAmount, CustomerTenure, BIN, OrderingMethod, ReasonForChargeBack
+
+#Question 4
+use logistic regression to find a good predictive model for whether credit applicants are good credit risks ornot. Show your model (factors used and their coefficients), the software output, and the quality of fit. 
+
+```{r}
+#v21 is the response variable, it is supposed to be logical. Converting to 0 and 1 rather than 1 and 2
+germanCreditData$V21 <- as.integer(ifelse(germanCreditData$V21 == 2,1,0))
+
+germanGLM <- glm(V21 ~ .,family=binomial(link='logit'), data = germanCreditData)
+
+summary(germanGLM)
+
+
+```
 

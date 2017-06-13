@@ -3,19 +3,12 @@ title: "Week 4 Homework"
 output: pdf_document
 ---
 
-
+#loading packages and setting seed for homework
 ```{r, message=FALSE, warning=FALSE}
-library('GGally')
 library('tidyverse')
 library('randomForest')
 library('rpart')
-
-
-#Crime data file 
-crimeData <- read.table("http://www.statsci.org/data/general/uscrime.txt", header = TRUE)
-
-#German Credit Data
-germanCreditData <-as.data.frame(read.table("http://archive.ics.uci.edu/ml/machine-learning-databases/statlog/german/german.data"))
+library('ROCR')
 
 #Set seed for reproducibility
 set.seed(156)
@@ -33,24 +26,32 @@ The results I obtained indicate that my original model from Week 3 was a more ac
 
 ```{r}
 
+#Crime data file 
+crimeData <- read.table("http://www.statsci.org/data/general/uscrime.txt", header = TRUE)
+
 #Performing PCA on original crime dataset, removing response variable. 
 CrimePCA <- prcomp(crimeData[,-16], center = TRUE, scale. = TRUE)
 
-#The first four principal components account for 79% of the variance in the data. This can be seen with the screeplot and summary. 
+#The first four principal components account for 79% of the variance in the data. 
+# This can be seen with the screeplot and summary. 
 summary(CrimePCA)
 screeplot(CrimePCA, type = "lines")
 
 #rotation matrix of first 4 Principal Components
 CrimePCA$rotation[,1:4]
 
-#Checking to ensure that principal components are orthogonal - perfect correlation across the diagonal confirms this. 
+#Checking to ensure that principal components are orthogonal - 
+# perfect correlation across the diagonal confirms this. 
 cor(CrimePCA$x[,1:4])
 
 # creating dataframe with principal components and response variable
 CrimePCAData <- cbind(crimeData[,16],data.frame(CrimePCA$x[,1:4]))
 colnames(CrimePCAData)[1] <- 'Crime'
 
-#creating linear model using 1st 4 principal components - R squared value is only 0.3. PC3 and PC4 seem to be statistically insignificant to the model which tells me that the first 4 principal components do not produce a better result from the original model. 
+#creating linear model using 1st 4 principal components - 
+# R squared value is only 0.3. PC3 and PC4 seem to be statistically insignificant to the model 
+# which tells me that the first 4 principal components do not produce a 
+# better result from the original model. 
 CrimePCA.lm <- lm(Crime ~., data = CrimePCAData)
 summary(CrimePCA.lm)
 
@@ -62,7 +63,9 @@ betas
 #original linear model from Week 3 
 crimeModel <- lm(Crime ~ ., data = crimeData)
 
-#using ANOVA to compare the PCA model vs the original model. This shows the P value being 7.857e-06 which is less than .05 so we can reject the null hypothesis. The models are different. 
+#using ANOVA to compare the PCA model vs the original model. 
+# This shows the P value being 7.857e-06 which is less than .05 so 
+# we can reject the null hypothesis. The models are different. 
 anova(CrimePCA.lm,crimeModel)
 
 crimeData$predictedWeek3 <-  predict(crimeModel)
@@ -147,15 +150,43 @@ Describe a situation or problem from your job, everyday life, current events, et
 Logistic regression would be useful at work to determine the probability of successfully winning a bank charge back. Predictors that would be good in this model would be: PrincipalAmount, CustomerTenure, BIN, OrderingMethod, ReasonForChargeBack
 
 #Question 4
-use logistic regression to find a good predictive model for whether credit applicants are good credit risks ornot. Show your model (factors used and their coefficients), the software output, and the quality of fit. 
+use logistic regression to find a good predictive model for whether credit applicants are good credit risks or not. Show your model (factors used and their coefficients), the software output, and the quality of fit. 
 
 ```{r}
-#v21 is the response variable, it is supposed to be logical. Converting to 0 and 1 rather than 1 and 2
+#German Credit Data
+germanCreditData <-as.data.frame(read.table("http://archive.ics.uci.edu/ml/machine-learning-databases/statlog/german/german.data"))
+
+#v21 is the response variable, it is supposed to be logical. 
+# Converting to 0 and 1 rather than 1 and 2. new data: 0 is bad 1 is good
 germanCreditData$V21 <- as.integer(ifelse(germanCreditData$V21 == 2,1,0))
 
+#Creating the initial logisitc model 
 germanGLM <- glm(V21 ~ .,family=binomial(link='logit'), data = germanCreditData)
 
 summary(germanGLM)
+
+Pgerman <- predict(germanGLM, newdata = germanCreditData[,-21], type="response")
+#converting probabilities to logical responses 
+Pgerman <- ifelse(Pgerman > 0.5,1,0)
+
+#prediction accuracy of glm model 
+predVariance <- mean(Pgerman != germanCreditData[,21])
+cat('Prediction Accuracy:',(1-predVariance))
+
+
+#Creating ROC Curve and plotting using the ROCR package
+predictions <- ROCR::prediction(Pgerman, germanCreditData$V21)
+perf <- performance(predictions, measure = "tpr", x.measure = "fpr")
+plot(perf)
+
+
+auc <- performance(predictions, measure = "auc")
+#grabbing only the auc value 
+auc <- auc@y.values[[1]]
+#This tells me that the model is doing well as the auc number is greater than .5 and near 1 
+auc
+
+
 
 
 ```

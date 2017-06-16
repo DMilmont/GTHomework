@@ -7,6 +7,8 @@ output: pdf_document
 ```{r, message=FALSE, warning=FALSE}
 library('tidyverse')
 library('glmnet')
+library('GGally')
+library('MASS')
 
 
 #Set seed for reproducibility
@@ -27,6 +29,23 @@ For Parts 2 and 3, use the glmnet function in R.
 #Crime data file 
 crimeData <- read.table("http://www.statsci.org/data/general/uscrime.txt", header = TRUE)
 
-glmnet(crimeData[,1:15],crimeData[,16])
+#serparting out dataset
+x <- as.matrix(crimeData[,1:15])
+y <- as.double(as.matrix(crimeData[,16]))
+
+#creating model 
+glmMod <- glmnet(x,y,family='gaussian', standardize = TRUE)
+glmMod.cv <- cv.glmnet(x,y,family='gaussian', standardize = TRUE)
+
+plot(glmMod)
+plot(glmMod.cv)
+
+glm.pred <- predict(glmMod,newx=x)
+mte=apply((tpred-hiv.test$y)^2,2,mean)
+
+#creating MSE
+mean((y - glm.pred)^2)
+
+
 ```
 

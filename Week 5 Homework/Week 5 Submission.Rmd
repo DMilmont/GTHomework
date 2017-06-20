@@ -46,6 +46,9 @@ mte=apply((tpred-hiv.test$y)^2,2,mean)
 #creating MSE
 mean((y - glm.pred)^2)
 
+#stepwise regression
+stepwiseMod <- step(lm(Crime~.,data=crimeData),direction="backward")
+
 
 ```
 

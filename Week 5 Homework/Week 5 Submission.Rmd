@@ -7,8 +7,9 @@ output: pdf_document
 ```{r, message=FALSE, warning=FALSE}
 library('tidyverse')
 library('glmnet')
-library('GGally')
 library('MASS')
+library('FrF2')
+
 
 
 #Set seed for reproducibility
@@ -25,7 +26,7 @@ For Parts 2 and 3, remember to scale the data first – otherwise, the regressio
 different scales and the constraint won’t have the desired effect.
 For Parts 2 and 3, use the glmnet function in R. 
 
-```{r}
+```{r data preparation}
 #Crime data file 
 crimeData <- read.table("http://www.statsci.org/data/general/uscrime.txt", header = TRUE)
 
@@ -33,22 +34,129 @@ crimeData <- read.table("http://www.statsci.org/data/general/uscrime.txt", heade
 x <- as.matrix(crimeData[,1:15])
 y <- as.double(as.matrix(crimeData[,16]))
 
-#creating model 
-glmMod <- glmnet(x,y,family='gaussian', standardize = TRUE)
-glmMod.cv <- cv.glmnet(x,y,family='gaussian', standardize = TRUE)
+```
 
-plot(glmMod)
-plot(glmMod.cv)
-
-glm.pred <- predict(glmMod,newx=x)
-mte=apply((tpred-hiv.test$y)^2,2,mean)
-
-#creating MSE
-mean((y - glm.pred)^2)
-
+#Question 1.1
+creating stepwise regression model. Chose a backward direction to start with all variables and reduce. Stepwise regression does not require scaling, therefore did not transform the data. Stepwise model is eliminating variables based on AIC value. A lower AIC is better. 
+```{r stepwise model}
+#1
+#creating stepwise regression model. Chose a backward direction to start with all variables and reduce. Stepwise regression does not require scaling, therefore did not transform the data. 
 #stepwise regression
 stepwiseMod <- step(lm(Crime~.,data=crimeData),direction="backward")
+
+#comparison of models. AIC on initial model with all variables was 515, ended up at 504.
+stepwiseMod$anova
+
+# The final formula and coefficients with the optimal AIC is:
+stepwiseMod$coefficients
+
+#creating test dataframe to compare prediction results to actuals 
+stepwiseTest <- as.data.frame(crimeData[,16])
+stepwiseTest$pred <- predict(stepwiseMod)
+
+
+summary(stepwiseMod)
 
 
 ```
 
+
+#Question 1.2
+Lasso Model 
+```{r Lasso Model}
+#scaling data 
+xScaled <- scale(x, center = TRUE, scale = TRUE)
+
+Mod.Lasso <- glmnet(xScaled,y,family='gaussian', standardize = TRUE, alpha=1)
+
+#plotting model 
+plot(Mod.Lasso,xvar="lambda",label=TRUE)
+
+#summary
+summary(Mod.Lasso)
+
+#creating prediction 
+yhat  <- predict(Mod.Lasso,newx <- xScaled, s <- Mod.Lasso$lambda.1se)
+mse <- mean((y - yhat)^2)
+mse
+
+#sum of squares 
+sst <- sum((y - mean(y))^2)
+
+#sum of Errors
+sse <- sum((yhat - y)^2)
+
+#r squared
+r <- 1 - sst / sse
+r
+
+```
+
+#Question 1.3
+elastic net model 
+```{r}
+Mod.Elnet <- glmnet(xScaled,y,family='gaussian', standardize = TRUE, alpha=.5)
+
+#plotting model
+plot(Mod.Elnet,xvar="lambda",label=TRUE)
+
+summary(Mod.Elnet)
+
+#creating prediction 
+yhat2  <- predict(Mod.Elnet,newx2 <- xScaled, s2 <- Mod.Elnet$lambda)
+
+#mean square error
+mse2 <- mean((y - yhat2)^2)
+mse2
+
+#sum of squares 
+sst2 <- sum((y - mean(y))^2)
+
+#sum of Errors
+sse2 <- sum((yhat2 - y)^2)
+
+#r squared
+r2 <- 1 - sst2 / sse2
+r2
+
+```
+#Question 2
+Describe a situation or problem from your job, everyday life, current events, etc., for which a design of
+experiments approach would be appropriate.
+
+A DOE approach would be appropriate in my job to determine how fraud rates vary based on screen resolution of the device the customer is using to initiate an order. Screen resolution is a data point available to us on each order. As the ordering process is the same for all customers regardless of being fraud or not the experiment would already be controlled. We could further control the experiment by comparing customers from a certain country or type of customer such as average spend amount. The eventual outcome would be to see if there was a relationship to screen resolution and fraud rate. 
+
+
+#Question 3
+To reduce the survey size, the agent wants to show just 16 fictitious
+houses. Use R’s FrF2 function (in the FrF2 package) to find a fractional factorial design for this
+experiment: what set of features should each of the 16 fictitious houses? 
+```{r}
+#Fractional Factorial design for house
+house <- FrF2(16, 10,default.levels = c("no", "yes"))
+house
+```
+
+#Question 4
+For each of the following distributions, give an example of data that you would expect to follow this
+distribution (besides the examples already discussed in class).
+a. Binomial
+b. Geometric
+c. Poisson
+d. Exponential
+e. Weibull
+
+#Binomial 
+A binomial distribution is n independent experiments with a boolean outcome such as true/false, 1/0. An example of this type of distrubution would be a survey question asking a set N number of people if they voted for Donald Trump. This would be a yes/no outcome, therefore binomial. 
+
+#Geometric
+A geometric distribution is showing how many trials before we get to what we are looking for. An example of this would be how many licks it takes to get to the center of a tootsie pop.  Each lick would carry a certain probability of actaully hitting the center, which each lick we would be closer to the eventual outcome. 
+
+#Poisson
+A Poisson distribution is N number of occurances that are completely independent of each other and the frequency of occurance is known and the number of occurances in the time frequencies can be counted. A good example of this would be how many calls a call center agent receives in a 1 hour time frame. 
+
+#Exponential
+An Exponential distribution describes the arrival time of a randomly recurring independent event sequence. An example of this is if the mean time of a phone call for a customer service agent is 10 minutes, an exponential distrubution can be used to determine the probability of a phone call that lasts only 8 minutes. 
+
+#Weibull 
+The Weibull distribution is very useful for modeling the amount of time it takes something to fail, specifically the time between failures. I am going to go back to my geometric example as it also applies in a similar way. Weibull could determine the amount of time it takes to lick your way to the center of a tootsie pop. 

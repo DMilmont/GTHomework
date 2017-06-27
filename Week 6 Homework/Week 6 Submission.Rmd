@@ -1,0 +1,57 @@
+---
+title: "Week 6 Homework"
+output: 
+---
+
+
+```{r}
+#Loading needed packages
+library(dplyr)
+library(mice)
+```
+
+
+
+```{r}
+
+# Loading data
+cancerData <- read.csv("http://archive.ics.uci.edu/ml/machine-learning-databases/breast-cancer-wisconsin/breast-cancer-wisconsin.data", 
+                       header = FALSE, 
+          
+                                    na.strings = "?")
+#Adding column names
+colnames(cancerData) <- c("SampleNo", 
+                          "Thickness", 
+                          "SizeUniform", 
+                          "ShapeUniform", 
+                          "Adhesion", 
+                          "SE_CellSize", 
+                          "BareNuclei", 
+                          "BlandChromatin", 
+                          "NormalNucleoli", 
+                          "Mitoses", 
+                          "Class")
+
+```
+
+
+#Question 2
+1. Use the mean/mode imputation method to impute values for the missing data.
+2. Use regression to impute values for the missing data.
+3. Use regression with perturbation to impute values for the missing data.
+4. (Optional) Compare the results and quality of classification models (e.g., SVM, KNN) build using
+(1) the data sets from questions 1,2,3; (2) the data that remains after data points with missing
+values are removed; and (3) the data set when a binary variable is introduced to indicate missing
+values
+
+```{r}
+#Creating 3 data sets to answers questions 1-3
+mmData <- cancerData
+regData <- cancerData
+pertData <- cancerData
+
+
+
+
+```
+

@@ -6,8 +6,9 @@ output:
 
 ```{r}
 #Loading needed packages
-library(dplyr)
-library(mice)
+library(tidyverse)
+library(Amelia)
+library(kernlab)
 ```
 
 
@@ -16,9 +17,7 @@ library(mice)
 
 # Loading data
 cancerData <- read.csv("http://archive.ics.uci.edu/ml/machine-learning-databases/breast-cancer-wisconsin/breast-cancer-wisconsin.data", 
-                       header = FALSE, 
-          
-                                    na.strings = "?")
+                       header = FALSE, na.strings = "?")
 #Adding column names
 colnames(cancerData) <- c("SampleNo", 
                           "Thickness", 
@@ -50,8 +49,146 @@ mmData <- cancerData
 regData <- cancerData
 pertData <- cancerData
 
+#visualizing missing data. Looks like there are only a few missing values for BareNuclei
+Amelia::missmap(cancerData)
+summary(cancerData$BareNuclei)
+
+```
+
+#Question 2.1 
+Mean/Mode imputation - The assignement seems to make it optional on which method to choose. I chose the mode method as there is a large amount of 1's in the dataset which makes my chances of imputating an accurate value higher. 
+```{r}
+#Visualizing the distribution of values from column with missing values. Most datapoints seem to be either 1 or 10 with scattering in between. Based on this I am choosing the mode imputation method. 
+ggplot(mmData, aes(BareNuclei)) +
+  geom_histogram(binwidth = 1)
+
+#since we know only one of the columns has missing data I will focus on this alone for mean/mode imputation. 
+mean(mmData$BareNuclei,na.rm = TRUE)
+
+#Mean of vector: 3.54
+
+#function for finding the mode, the number which appears most often 
+Mode <- function(x) {
+  ux <- unique(x)
+  ux[which.max(tabulate(match(x, ux)))]
+}
+
+Mode(mmData$BareNuclei)
+
+#Mode of BareNuclei vector: 1
+
+#imputing mising values with mean - I will not use this as my final result. Just demonstrating for homework. 
+# mmData$BareNuclei <- ifelse(is.na(mmData$BareNuclei),round(mean(mmData$BareNuclei,na.rm = TRUE),0),mmData$BareNuclei)
+
+#imputing missing values with mode - these are the results I will use. 
+mmData$BareNuclei <- ifelse(is.na(mmData$BareNuclei),Mode(mmData$BareNuclei),mmData$BareNuclei)
+
+#confirming results: No more missing values 
+Amelia::missmap(mmData)
+summary(mmData$BareNuclei)
+
+#imputation completed, checking mean and mode with imputations, Mean is slightly lowered to 3.48 from 3.54. 
+mean(mmData$BareNuclei)
+Mode(mmData$BareNuclei)
+```
+
+#Question 2.2
+Use regression to impute values for the missing data.
+
+```{r}
+#selecting columns for new df which is used for the linear model. SampleNo is not important to results. 
+lmModData <- regData %>% 
+            dplyr::select(Thickness,SizeUniform,ShapeUniform,Adhesion,SE_CellSize,BareNuclei,BlandChromatin,NormalNucleoli,Mitoses,Class) 
+            
+#building basic linear model
+lmMod <- lm(BareNuclei ~ ., lmModData)
+lmMod
+summary(lmMod)
+
+#generating rounded predictions for missing data points - rounding is required as all observations are whole numbers
+round(predict(lmMod, regData[is.na(regData$BareNuclei),]),0)
+
+#final imputation using linear regression
+regData$BareNuclei[is.na(regData$BareNuclei)] <- round(predict(lmMod, regData[is.na(regData$BareNuclei),]),0)
+
+#confirming imputation was successful, with no major differences in summary stats 
+Amelia::missmap(regData)
+summary(regData$BareNuclei)
+
+```
+
+#Question 2.3 
+Use regression with perturbation to impute values for the missing data. I used a new dataframe pertData but recycled the linear model I created in 2.2. Rather than just using the linear model prediction results I used the jitter function to add noise to the data. By default the jitter function uses a uniform distribution. I am not a fan or perturbing the data in this way as it creates data that is not similar to the rest of the dataset, non-whole numbers. 
+```{r}
+
+#using the jitter function to add noise to the predictions based on a uniform distribution of the vector 
+pertData$BareNuclei[is.na(pertData$BareNuclei)] <- jitter(predict(lmMod, pertData[is.na(pertData$BareNuclei),]))
+
+#visualizing the completeness of the dataset to confirm imputation was successful 
+Amelia::missmap(pertData)
+
+#summary statistics show that mean is very close to overall original dataset
+summary(pertData$BareNuclei)
+```
+
+#Question 2.4 
+(Optional) Compare the results and quality of classification models (e.g., SVM, KNN) build using
+(1) the data sets from questions 1,2,3; (2) the data that remains after data points with missing
+values are removed; and (3) the data set when a binary variable is introduced to indicate missing
+values
+
+```{r}
+#building datasets to run model against
+originalData <- cancerData 
+datasets <- list(mmData,pertData,regData)
+names(datasets) <- c('mmData','pertData','regData')
+
+#building SVM Model and Predictions for questions 1-3. Using basic linear kernal for comparisons 
+# the model results tell me that each model is identical, the imputations made little difference. 
+# The reason I think this is the case is due to only 12 values being missing in the dataset and the 
+# imputations are not really changing the summary statistics in any significant way.
+ModelResults <- list()
+PredResults <- list()
+j = 1
+
+#loop to create a model for the first 3 datasets and evaluate them 
+for (i in datasets){
+  name <- names(datasets)[j]
+  ModelResults[[name]] <- ksvm(as.matrix(i[,2:10]),as.matrix(i[,11]), type = "C-svc", kernal = "vanilladot", C=.1, scaled = TRUE, cross = 5, na.action = na.omit)
+  PredResults[[name]] <- predict(ModelResults[[name]],i[,2:10])
+  originalData[,name] <- PredResults[[name]]
+  cat('SVM accuracy for:',name,sum(PredResults[[name]] == originalData[,11]) / nrow(originalData),'\n')
+  j = j+1
+}
 
 
+#Creating SVM model with simply ignoring the NA's
+SVM.NAIgnore <- ksvm(as.matrix(cancerData[,2:10]), as.matrix(cancerData[,11]), type = "C-svc", kernal = "vanilladot", C=.1, scaled = TRUE, cross = 5, na.action = na.omit)
+cancerData[complete.cases(cancerData),12] <- predict(SVM.NAIgnore,cancerData[complete.cases(cancerData),2:10])
+
+#accuracy with just ignoring the NA is actually slightly higher than my imputed models 
+cat('SVM accuracy for SVM.NAIgnore:',sum(cancerData$V12 == cancerData$Class) / nrow(cancerData[complete.cases(cancerData),]),'\n')
+
+
+
+#creating final dataset for comparison
+flaggingNAData <- cancerData
+flaggingNAData$V12 <- NULL
+flaggingNAData$isNA <- ifelse(is.na(flaggingNAData$BareNuclei),1,0)
+
+#now that NA rows are flagged will impute with regression model from previous question before placing into model to see how is.na column affects the model 
+flaggingNAData$BareNuclei <- regData$BareNuclei
+
+#ensuring NA's were imputed 
+summary(flaggingNAData$BareNuclei)
+
+#building SVM model with new is.na feature
+SVM.NAFlagged <- ksvm(as.matrix(flaggingNAData[,2:10,12]), as.matrix(flaggingNAData[,11]), type = "C-svc", kernal = "vanilladot", C=.1, scaled = TRUE, cross = 5)
+flaggingNAData$pred <- predict(SVM.NAFlagged,flaggingNAData[,2:10,12])
+
+#model accuracy - is nearly identical to the imputed models. This tells me that the new feature is not adding a lot of value. 
+# However I believe having a is.imputed column is very important for future analysis and maintaining a intuitive dataset. 
+cat('SVM accuracy:',sum(flaggingNAData$pred == flaggingNAData[,11]) / nrow(flaggingNAData),'\n')
 
 ```
 

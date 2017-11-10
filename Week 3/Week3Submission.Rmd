@@ -244,7 +244,12 @@ modelResiduals %>%
 modelResiduals %>% 
   ggplot(aes(sample=modelResiduals$Normal)) +
   stat_qq() +
-  labs(title = "Normal Residuals")
+  labs(title = "Normal Residuals") 
+  
+  
+  
+  
+  
 ```
 
 ------
